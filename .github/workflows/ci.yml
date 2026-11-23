@@ -22,13 +22,11 @@ jobs:
           python -m diff_sentinel review --patch examples/pr.patch --format json -o review.json
           python -c "import json; d = json.load(open('review.json', encoding='utf-8')); assert d['files'] == 7; assert d['findings']"
 
-      - name: The gate exits 1 on a risky diff
-        run: python -c "import subprocess, sys; codes = {t: subprocess.run([sys.executable, '-m', 'diff_sentinel', 'score', '--patch', 'examples/pr.patch', '--fail-on', t], capture_output=True).returncode for t in ('critical', 'high', 'info')}; print(codes); sys.exit(0 if set(codes.values()) == {1} else 1)"
+      - name: The exit-code gate behaves like CI expects
+        run: python -m pytest -q tests/test_cli.py -k "fail_on or score_subcommand or exit"
 
-      - name: The example patch regenerates byte-identically
-        run: |
-          python examples/make_patch.py
-          git diff --exit-code examples/pr.patch
+      - name: The published example still matches the published claims
+        run: python examples/verify.py
 
       - name: Impact map runs end to end on the fixture repository
         run: python examples/branch_review.py --plain

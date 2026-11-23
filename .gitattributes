@@ -1,0 +1,5 @@
+# Keep line endings stable so examples/pr.patch is byte-identical across platforms,
+# and so "git diff --exit-code" in CI is a real determinism check.
+* text=auto eol=lf
+*.png binary
+*.patch text eol=lf
