@@ -1,0 +1,217 @@
+{
+  "target": "pr.patch",
+  "mode": "patch",
+  "files": 7,
+  "added": 55,
+  "removed": 3,
+  "score": 0,
+  "verdict": "Do not merge - critical problems present.",
+  "severity_counts": {
+    "critical": 4,
+    "high": 4,
+    "medium": 6,
+    "low": 3,
+    "info": 0
+  },
+  "findings": [
+    {
+      "rule": "migration-hazard",
+      "severity": "critical",
+      "title": "DROP COLUMN destroys data",
+      "path": "migrations/versions/0007_drop_legacy.py",
+      "line": 7,
+      "location": "migrations/versions/0007_drop_legacy.py:7",
+      "evidence": "op.execute(\"ALTER TABLE users DROP COLUMN legacy_email\")",
+      "fix": "Ship a two step migration: stop writing the column, deploy that, then drop it in a later release after a verified backup.",
+      "detail": "Detected in a migration/SQL file."
+    },
+    {
+      "rule": "risk-area",
+      "severity": "critical",
+      "title": "authentication code changed",
+      "path": "app/auth/session.py",
+      "line": 5,
+      "location": "app/auth/session.py:5",
+      "evidence": "# Added by the bad PR: persists the token on the user row.",
+      "fix": "Get a domain owner to review this file before merge.",
+      "detail": "Auth surface changed; a defect here is an account-takeover class bug."
+    },
+    {
+      "rule": "risk-area",
+      "severity": "critical",
+      "title": "payments code changed",
+      "path": "app/billing/charge.py",
+      "line": 7,
+      "location": "app/billing/charge.py:7",
+      "evidence": "\"\"\"Charge the order and return the gateway result.",
+      "fix": "Get a domain owner to review this file before merge.",
+      "detail": "Money path changed; a defect here charges or refunds the wrong amount."
+    },
+    {
+      "rule": "secret",
+      "severity": "critical",
+      "title": "GitHub token committed",
+      "path": "app/auth/session.py",
+      "line": 6,
+      "location": "app/auth/session.py:6",
+      "evidence": "ghp_4f...01",
+      "fix": "Revoke and rotate the credential now, then load the replacement from an environment variable or secret manager. Rewriting history is not enough once it is pushed.",
+      "detail": "Matched detector github-token."
+    },
+    {
+      "rule": "migration-hazard",
+      "severity": "high",
+      "title": "NOT NULL column added without a default",
+      "path": "migrations/versions/0007_drop_legacy.py",
+      "line": 8,
+      "location": "migrations/versions/0007_drop_legacy.py:8",
+      "evidence": "op.execute(\"ALTER TABLE orders ADD COLUMN risk_score INTEGER NOT NULL\")",
+      "fix": "Add the column as nullable, backfill it in batches, then set NOT NULL in a second migration. On MySQL the single step also rewrites the table under a lock.",
+      "detail": "Detected in a migration/SQL file."
+    },
+    {
+      "rule": "migration-hazard",
+      "severity": "high",
+      "title": "UPDATE without WHERE",
+      "path": "migrations/versions/0007_drop_legacy.py",
+      "line": 9,
+      "location": "migrations/versions/0007_drop_legacy.py:9",
+      "evidence": "op.execute(\"UPDATE orders SET risk_score = 0\")",
+      "fix": "Add a WHERE clause, or run it inside a transaction and verify the affected row count before committing.",
+      "detail": "Detected in a migration/SQL file."
+    },
+    {
+      "rule": "risk-area",
+      "severity": "high",
+      "title": "database schema code changed",
+      "path": "migrations/versions/0007_drop_legacy.py",
+      "line": 1,
+      "location": "migrations/versions/0007_drop_legacy.py:1",
+      "evidence": "\"\"\"Drop the legacy email column and add a risk score.\"\"\"",
+      "fix": "Get a domain owner to review this file before merge.",
+      "detail": "Schema migration changed; review the rollback path and the lock it takes."
+    },
+    {
+      "rule": "typosquat",
+      "severity": "high",
+      "title": "dependency looks like a typo of requests",
+      "path": "requirements.txt",
+      "line": 2,
+      "location": "requirements.txt:2",
+      "evidence": "reqeusts==2.31.0",
+      "fix": "Confirm the exact package name on the registry before merging; typosquats ship install scripts that exfiltrate credentials.",
+      "detail": "Edit distance 1 from requests; the real package is licensed Apache-2.0."
+    },
+    {
+      "rule": "migration-no-transaction",
+      "severity": "medium",
+      "title": "DDL without an explicit transaction",
+      "path": "migrations/versions/0007_drop_legacy.py",
+      "line": 1,
+      "location": "migrations/versions/0007_drop_legacy.py:1",
+      "evidence": "\"\"\"Drop the legacy email column and add a risk score.\"\"\"",
+      "fix": "Wrap the DDL in BEGIN; ... COMMIT; (or the framework's atomic block) so a failure halfway cannot leave a half-migrated schema.",
+      "detail": "The migration adds DDL but never opens a transaction."
+    },
+    {
+      "rule": "missing-tests-untargeted",
+      "severity": "medium",
+      "title": "test changes do not mention the changed code",
+      "path": "app/auth/session.py",
+      "line": 5,
+      "location": "app/auth/session.py:5",
+      "evidence": "impersonate",
+      "fix": "Point the new test at impersonate: import the module under test and assert the new branch.",
+      "detail": "The diff changes tests, but none of them reference 'impersonate'."
+    },
+    {
+      "rule": "missing-tests-untargeted",
+      "severity": "medium",
+      "title": "test changes do not mention the changed code",
+      "path": "app/billing/charge.py",
+      "line": 7,
+      "location": "app/billing/charge.py:7",
+      "evidence": "charge",
+      "fix": "Point the new test at charge: import the module under test and assert the new branch.",
+      "detail": "The diff changes tests, but none of them reference 'charge'."
+    },
+    {
+      "rule": "risk-area",
+      "severity": "medium",
+      "title": "dependency manifest code changed",
+      "path": "requirements.txt",
+      "line": 2,
+      "location": "requirements.txt:2",
+      "evidence": "reqeusts==2.31.0",
+      "fix": "Get a domain owner to review this file before merge.",
+      "detail": "Dependency manifest changed; see the dependency findings below."
+    },
+    {
+      "rule": "unpinned-dependency",
+      "severity": "medium",
+      "title": "dependency added without a version bound",
+      "path": "requirements.txt",
+      "line": 3,
+      "location": "requirements.txt:3",
+      "evidence": "stripe",
+      "fix": "Pin it (==x.y.z) or bound it (>=x.y,<x+1) so CI resolves the same version you tested.",
+      "detail": "Version spec was empty for stripe."
+    },
+    {
+      "rule": "unrelated-change",
+      "severity": "medium",
+      "title": "changes span 5 unrelated modules",
+      "path": null,
+      "line": null,
+      "location": "(diff)",
+      "evidence": "(root), app, app/auth, app/billing, migrations/versions",
+      "fix": "Split the diff by module, or list every touched area in the PR description so the reviewer knows the blast radius.",
+      "detail": "Modules touched: (root), app, app/auth, app/billing, migrations/versions."
+    },
+    {
+      "rule": "debug-leftover",
+      "severity": "low",
+      "title": "debug print left in the diff",
+      "path": "app/auth/session.py",
+      "line": 17,
+      "location": "app/auth/session.py:17",
+      "evidence": "print(\"refreshed with the shared token for\", user[\"id\"])",
+      "fix": "Remove it, or replace it with a structured log call behind the project's logging configuration.",
+      "detail": "Debug statements shipped to production leak data and slow hot paths."
+    },
+    {
+      "rule": "debug-leftover",
+      "severity": "low",
+      "title": "debug print left in the diff",
+      "path": "app/billing/charge.py",
+      "line": 18,
+      "location": "app/billing/charge.py:18",
+      "evidence": "print(\"parked order for manual review:\", order[\"id\"])",
+      "fix": "Remove it, or replace it with a structured log call behind the project's logging configuration.",
+      "detail": "Debug statements shipped to production leak data and slow hot paths."
+    },
+    {
+      "rule": "new-dependency",
+      "severity": "low",
+      "title": "new dependency: stripe",
+      "path": "requirements.txt",
+      "line": 3,
+      "location": "requirements.txt:3",
+      "evidence": "stripe",
+      "fix": "Confirm the licence is compatible and the package is actively maintained before adding it to the tree.",
+      "detail": "Licence guess: MIT. Known package: yes"
+    }
+  ],
+  "impact": [],
+  "stats": {
+    "files": 7,
+    "added": 55,
+    "removed": 3,
+    "test_files": 1,
+    "source_files": 4,
+    "ignored_files": 0,
+    "rule_count": 19
+  },
+  "notes": [],
+  "pr": null
+}

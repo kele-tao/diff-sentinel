@@ -1,0 +1,38 @@
+name: Feature request
+description: Suggest a new rule, output format or integration.
+title: "[feat] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        diff-sentinel is stdlib-only on purpose. Please describe the reviewer problem
+        before the implementation.
+  - type: textarea
+    id: problem
+    attributes:
+      label: The review problem
+      description: What slips through today, and what does it cost?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed rule or behaviour
+      description: What should diff-sentinel report, at what severity, with what fix hint?
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Which severity would it be?
+      options: [critical, high, medium, low, info]
+    validations:
+      required: true
+  - type: textarea
+    id: false-positive
+    attributes:
+      label: When would it be a false positive?
+      description: Every rule needs a documented way to be wrong; that is what tests encode.
+    validations:
+      required: true

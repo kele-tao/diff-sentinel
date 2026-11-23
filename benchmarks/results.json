@@ -1,0 +1,43 @@
+{
+  "environment": {
+    "python": "3.12.10",
+    "platform": "win32"
+  },
+  "repo_files": 600,
+  "repeats": 5,
+  "rows": [
+    {
+      "files": 50,
+      "changed_lines": 300,
+      "diff_kb": 18.0,
+      "parse_ms": 1.59,
+      "review_ms": 240.28,
+      "impact_ms": 232.81,
+      "findings": 101,
+      "modules_scanned": 600,
+      "max_dependents": 40
+    },
+    {
+      "files": 150,
+      "changed_lines": 900,
+      "diff_kb": 54.1,
+      "parse_ms": 4.76,
+      "review_ms": 269.4,
+      "impact_ms": 231.55,
+      "findings": 302,
+      "modules_scanned": 600,
+      "max_dependents": 40
+    },
+    {
+      "files": 500,
+      "changed_lines": 3000,
+      "diff_kb": 180.2,
+      "parse_ms": 14.82,
+      "review_ms": 307.93,
+      "impact_ms": 269.2,
+      "findings": 1003,
+      "modules_scanned": 600,
+      "max_dependents": 40
+    }
+  ]
+}

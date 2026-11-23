@@ -1,0 +1,126 @@
+diff --git a/app/auth/session.py b/app/auth/session.py
+index f7c5fab..da2b7ed 100644
+--- a/app/auth/session.py
++++ b/app/auth/session.py
+@@ -2,6 +2,9 @@
+ 
+ from app.core import is_expired, load_user
+ 
++# Added by the bad PR: persists the token on the user row.
++API_TOKEN = "ghp_4f8c1ab9de52f701"
++
+ 
+ def refresh(session, now):
+     """Return a live session, or None when it has expired."""
+@@ -9,5 +12,17 @@ def refresh(session, now):
+     if user is None:
+         return None
+     if is_expired(session, now):
++        if session.get("remember_me"):
++            user["token"] = API_TOKEN
++            print("refreshed with the shared token for", user["id"])
++            return {**session, "token": API_TOKEN}
+         return None
+     return session
++
++
++def impersonate(actor, target_id):
++    """Let admins open a session as another user."""
++    if actor.get("is_admin"):
++        target = load_user(target_id)
++        return {"user_id": target_id, "actor_id": actor["id"], "user": target}
++    return None
+diff --git a/app/billing/charge.py b/app/billing/charge.py
+index a90278a..b991537 100644
+--- a/app/billing/charge.py
++++ b/app/billing/charge.py
+@@ -4,8 +4,16 @@ from app.core import load_user
+ 
+ 
+ def charge(order, gateway):
+-    """Charge the order and return the gateway result."""
++    """Charge the order and return the gateway result.
++
++    Orders above the review threshold are parked for a manual check.
++    """
+     user = load_user(order["user_id"])
+     if user is None:
+         raise ValueError("unknown user for order " + str(order["id"]))
+-    return gateway.charge(order["total"])
++    result = gateway.charge(order["total"])
++    if order["total"] > 50000:
++        # console.log("parking order", order["id"])
++        result["manual_review"] = True
++        print("parked order for manual review:", order["id"])
++    return result
+diff --git a/app/core.py b/app/core.py
+index 9d3756e..e5f915f 100644
+--- a/app/core.py
++++ b/app/core.py
+@@ -15,3 +15,12 @@ def load_user(user_id):
+ def is_expired(session, now):
+     """True when the session timestamp is older than SESSION_TTL."""
+     return now - session["created_at"] > SESSION_TTL
++
++
++def is_locked(user):
++    """True when the account is locked or has too many failed logins."""
++    if user.get("locked_at") is not None:
++        return True
++    if user.get("failed_logins", 0) >= 5:
++        return True
++    return False
+diff --git a/docs/CHANGES.md b/docs/CHANGES.md
+new file mode 100644
+index 0000000..8f39148
+--- /dev/null
++++ b/docs/CHANGES.md
+@@ -0,0 +1,5 @@
++# Changes
++
++- Session refresh can reuse a shared API token.
++- Orders above 50000 are parked for manual review.
++- New is_locked helper, with one test.
+diff --git a/migrations/versions/0007_drop_legacy.py b/migrations/versions/0007_drop_legacy.py
+new file mode 100644
+index 0000000..3ea9871
+--- /dev/null
++++ b/migrations/versions/0007_drop_legacy.py
+@@ -0,0 +1,9 @@
++"""Drop the legacy email column and add a risk score."""
++
++revision = "0007"
++
++
++def upgrade(op):
++    op.execute("ALTER TABLE users DROP COLUMN legacy_email")
++    op.execute("ALTER TABLE orders ADD COLUMN risk_score INTEGER NOT NULL")
++    op.execute("UPDATE orders SET risk_score = 0")
+diff --git a/requirements.txt b/requirements.txt
+index 2c24336..962a18e 100644
+--- a/requirements.txt
++++ b/requirements.txt
+@@ -1 +1,3 @@
+ requests==2.31.0
++reqeusts==2.31.0
++stripe
+diff --git a/tests/test_core.py b/tests/test_core.py
+index 611f845..0ef34e1 100644
+--- a/tests/test_core.py
++++ b/tests/test_core.py
+@@ -1,6 +1,6 @@
+ """Tests for app.core."""
+ 
+-from app.core import is_expired, load_user
++from app.core import is_expired, is_locked, load_user
+ 
+ 
+ def test_load_user_missing():
+@@ -9,3 +9,7 @@ def test_load_user_missing():
+ 
+ def test_is_expired_true():
+     assert is_expired({"created_at": 0}, 4000) is True
++
++
++def test_is_locked():
++    assert is_locked({"locked_at": 1}) is True

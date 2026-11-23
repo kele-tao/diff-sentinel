@@ -1,0 +1,58 @@
+name: Bug report
+description: Report a wrong or missing finding, or a crash.
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. False positives and false negatives are both bugs.
+        Please redact credentials before pasting a patch.
+  - type: input
+    id: version
+    attributes:
+      label: diff-sentinel version
+      description: Output of `diff-sentinel --version`
+      placeholder: diff-sentinel 1.0.0
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Linux
+        - macOS
+        - Windows
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Exact command
+      description: The full command line you ran.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: patch
+    attributes:
+      label: Minimal patch that triggers it
+      description: Redact secrets. A five-line patch is better than your real one.
+      render: diff
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected instead
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened
+      render: shell
+    validations:
+      required: true

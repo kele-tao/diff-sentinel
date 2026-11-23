@@ -1,0 +1,34 @@
+name: ci
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: pip install -e ".[dev]"
+      - run: ruff check .
+      - run: pytest -q
+      - run: python -m diff_sentinel --help
+
+      - name: CLI smoke test on the bundled example
+        run: |
+          python -m diff_sentinel review --patch examples/pr.patch --color never --limit 5
+          python -m diff_sentinel review --patch examples/pr.patch --format json -o review.json
+          python -c "import json; d = json.load(open('review.json', encoding='utf-8')); assert d['files'] == 7; assert d['findings']"
+
+      - name: The gate exits 1 on a risky diff
+        run: python -c "import subprocess, sys; codes = {t: subprocess.run([sys.executable, '-m', 'diff_sentinel', 'score', '--patch', 'examples/pr.patch', '--fail-on', t], capture_output=True).returncode for t in ('critical', 'high', 'info')}; print(codes); sys.exit(0 if set(codes.values()) == {1} else 1)"
+
+      - name: The example patch regenerates byte-identically
+        run: |
+          python examples/make_patch.py
+          git diff --exit-code examples/pr.patch
+
+      - name: Impact map runs end to end on the fixture repository
+        run: python examples/branch_review.py --plain
