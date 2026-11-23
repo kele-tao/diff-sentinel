@@ -28,5 +28,10 @@ jobs:
       - name: The published example still matches the published claims
         run: python examples/verify.py
 
+      - name: examples/pr.patch regenerates byte-identically
+        run: |
+          python examples/make_patch.py
+          git diff --exit-code examples/pr.patch
+
       - name: Impact map runs end to end on the fixture repository
         run: python examples/branch_review.py --plain
