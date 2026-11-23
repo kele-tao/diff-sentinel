@@ -1,5 +1,7 @@
 # diff-sentinel
 
+**English** | [简体中文](README.zh-CN.md)
+
 Review a pull request like a senior engineer, without an LLM: it reads the diff, ranks every problem by severity with a file:line and a fix, and tells you whether the change is safe to merge.
 
 [![ci](https://github.com/kele-tao/diff-sentinel/actions/workflows/ci.yml/badge.svg)](https://github.com/kele-tao/diff-sentinel/actions/workflows/ci.yml)
